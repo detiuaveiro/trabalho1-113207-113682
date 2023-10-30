@@ -148,6 +148,7 @@ void ImageInit(void) { ///
   InstrName[0] = "pixmem";  // InstrCount[0] will count pixel array acesses
   // Name other counters here...
   
+  
 }
 
 // Macros to simplify accessing instrumentation counters:
@@ -172,6 +173,34 @@ Image ImageCreate(int width, int height, uint8 maxval) { ///
   assert (height >= 0);
   assert (0 < maxval && maxval <= PixMax);
   // Insert your code here!
+
+
+  // Allocate memory for the pixel data *
+  uint8_t *pixel = malloc(width * height * sizeof(uint8_t));
+  if (pixel == NULL) {
+    errCause = "Falhou a alocação de memória para o pixel";
+    return NULL;
+  }
+
+  // Alocar memória para o struct Image 
+  Image img = malloc(sizeof(struct image));
+  if (img == NULL) {
+    errCause = "Falhou a alocação de memória para a struct Image";
+    // Usei errCause para não ter que criar uma variável nova
+    free(pixel);
+    // Preciso de dar free ao pixel porque não foi atribuido ao img
+    // Não dar memleak
+    return NULL;
+  }
+
+  // Set the Image properties *
+  img->width = width;
+  img->height = height;
+  img->maxval = maxval;
+  img->pixel = pixel;
+
+  return img;
+
 }
 
 /// Destroy the image pointed to by (*imgp).
@@ -182,6 +211,12 @@ Image ImageCreate(int width, int height, uint8 maxval) { ///
 void ImageDestroy(Image* imgp) { ///
   assert (imgp != NULL);
   // Insert your code here!
+  free((*imgp)->pixel);
+  free(*imgp);
+  *imgp = NULL;
+  // Mesmo dando free ao imgp, o valor do imgp não é NULL
+  // Então dou set ao valor do pointer como NULL
+  
 }
 
 
@@ -294,6 +329,19 @@ int ImageMaxval(Image img) { ///
 void ImageStats(Image img, uint8* min, uint8* max) { ///
   assert (img != NULL);
   // Insert your code here!
+
+  //*min = 0;
+  //*max = 255;
+
+  for (int i = 0; i < img->width * img->height; i++) {
+    if (img->pixel[i] < *min) {
+      *min = img->pixel[i];
+    }
+    if (img->pixel[i] > *max) {
+      *max = img->pixel[i];
+    }
+  }
+
 }
 
 /// Check if pixel position (x,y) is inside img.
@@ -306,6 +354,12 @@ int ImageValidPos(Image img, int x, int y) { ///
 int ImageValidRect(Image img, int x, int y, int w, int h) { ///
   assert (img != NULL);
   // Insert your code here!
+  // return (0 <= w && w < img->width + x) && (0 <= h && h < img->height + y)
+  return ImageValidPos(img, x, y) && ImageValidPos(img, x+w, y+h);
+  // Assim vemos se o retangulo está dentro da imagem
+  // Porque se o x e y forem maiores que a largura e altura da imagem
+  // Então o retangulo não está dentro da imagem
+  // Isto deve estar mal, tenho que ver melhor, perceber o x,y,w,h que penso que seja o x,y do retangulo e o w,h a largura e altura do retangulo
 }
 
 /// Pixel get & set operations
@@ -321,7 +375,14 @@ int ImageValidRect(Image img, int x, int y, int w, int h) { ///
 static inline int G(Image img, int x, int y) {
   int index;
   // Insert your code here!
+  index = y * (img->width-1) + x;
+
+  // Se as imagens forem retangulares sempre, posso fazer img->width * img->height
+  // Ou secalhar não porque ia ser sempre o mesmo valor que é o da struct image
+
   assert (0 <= index && index < img->width*img->height);
+  // Esta função vai transformar uma matriz nalgo linear
+  // Se a matriz for 10x10 então o último pixel está no index 99
   return index;
 }
 
