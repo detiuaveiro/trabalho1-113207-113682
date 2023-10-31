@@ -417,6 +417,13 @@ void ImageSetPixel(Image img, int x, int y, uint8 level) { ///
 void ImageNegative(Image img) { ///
   assert (img != NULL);
   // Insert your code here!
+  int size = img->width * img->height;
+  for (int i = 0; i < size; i++) {
+    img->pixel[i] = img->maxval - img->pixel[i];
+  }
+  // Testar se dá todos os valores certos
+  // Estou em dúvida se converteria realmente para o oposto se já for um light pixel
+  // d
 }
 
 /// Apply threshold to image.
@@ -425,6 +432,14 @@ void ImageNegative(Image img) { ///
 void ImageThreshold(Image img, uint8 thr) { ///
   assert (img != NULL);
   // Insert your code here!
+  int size = img->width * img->height;
+  for (int i = 0; i < size; i++) {
+  if (img->pixel[i] < thr) {
+    img->pixel[i] = 0;
+  } else {
+    img->pixel[i] = img->maxval;
+  }
+ }
 }
 
 /// Brighten image by a factor.
@@ -433,8 +448,17 @@ void ImageThreshold(Image img, uint8 thr) { ///
 /// darken the image if factor<1.0.
 void ImageBrighten(Image img, double factor) { ///
   assert (img != NULL);
-  // ? assert (factor >= 0.0);
+  assert (factor >= 0.0);
   // Insert your code here!
+  // Podemos otimizar o uso da variável size? -> Verificar se podemos usar uma função
+  int size = img->width * img->height;
+  for (int i = 0 ; i < size; i++) {
+    img->pixel[i] = img->pixel[i] * factor + 0.5;
+    // Porque não dava para dar round então + 0.5
+    if (img->pixel[i] > img->maxval) {
+      img->pixel[i] = img->maxval;
+    }
+  }
 }
 
 
@@ -459,9 +483,34 @@ void ImageBrighten(Image img, double factor) { ///
 /// On success, a new image is returned.
 /// (The caller is responsible for destroying the returned image!)
 /// On failure, returns NULL and errno/errCause are set accordingly.
-Image ImageRotate(Image img) { ///
-  assert (img != NULL);
-  // Insert your code here!
+Image ImageRotate(Image img) {
+  assert(img != NULL);
+  // Insert code here!
+  Image new_img = ImageCreate(img->height, img->width, img->maxval);
+  double sinx = sin(-90 * 3.1415 / 180.0);  // -degrees
+  double cosx = cos(-90 * 3.1415 / 180.0);
+
+  double xCenter = img->height / 2.0;        // Rotate image by its center.
+  double yCenter = img->width / 2.0;
+
+  for(int x = 0; x < img->height; x++) {
+    double xt = x - xCenter;
+    double xt_cosx = xt * cosx;
+    double xt_sinx = xt * sinx;
+    for(int y = 0; y < img->width; y++) {
+      double yt = y - yCenter;
+      long xRotate = (xt_cosx - yt * sinx) + xCenter;
+      long yRotate = (yt * cosx + xt_sinx) + yCenter;
+
+      if(xRotate >= 0 && xRotate < img->height && yRotate >= 0 && yRotate < img->width) {
+        new_img->pixel[x * new_img->width + y] = img->pixel[xRotate * img->width + yRotate];
+      } else {
+        new_img->pixel[x * new_img->width + y] = 0;  // Set to black if out of bounds
+      }
+    }
+  }
+
+  return new_img;
 }
 
 /// Mirror an image = flip left-right.
