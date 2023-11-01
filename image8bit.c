@@ -184,6 +184,7 @@ Image ImageCreate(int width, int height, uint8 maxval) { ///
 
   // Alocar memória para o struct Image 
   Image img = malloc(sizeof(struct image));
+
   if (img == NULL) {
     errCause = "Falhou a alocação de memória para a struct Image";
     // Usei errCause para não ter que criar uma variável nova
@@ -375,11 +376,25 @@ int ImageValidRect(Image img, int x, int y, int w, int h) { ///
 static inline int G(Image img, int x, int y) {
   int index;
   // Insert your code here!
-  index = y * (img->width-1) + x;
-
+  // index = y * (img->width-1) + x;
+  // Isto estava mal porque se tivesse um numero numa matriz 3x3 na coordenada (1,1) ele iria estar na posicao index 3
+  /*
+  1 2 3
+  4 5 6
+  7 8 9
+  */
+  // Posição (1,1) -> pode corresponder a 1 ou a 5, mas a posição 3 daria print ao array, 4 ou 3, dependendo se conta index 0 ou 1
   // Se as imagens forem retangulares sempre, posso fazer img->width * img->height
   // Ou secalhar não porque ia ser sempre o mesmo valor que é o da struct image
 
+  // tendo um array com i linhas j colunas
+  // Posição (1,1) -> corresponde ao meio numa matriz 3x3
+  // Neste caso o numero ficaria no indice 4
+  // Posição 0,0 corresponderia ao indice 0
+  // i corresponde à linha onde estas e j corresponde à coluna onde estas
+  // 0,0 é o canto superior esquerdo
+  index = y * (img->width) + x;
+  
   assert (0 <= index && index < img->width*img->height);
   // Esta função vai transformar uma matriz nalgo linear
   // Se a matriz for 10x10 então o último pixel está no index 99
@@ -400,6 +415,7 @@ void ImageSetPixel(Image img, int x, int y, uint8 level) { ///
   assert (ImageValidPos(img, x, y));
   PIXMEM += 1;  // count one pixel access (store)
   img->pixel[G(img, x, y)] = level;
+  // O pixel em x,y vai ser level
 } 
 
 
@@ -487,29 +503,38 @@ Image ImageRotate(Image img) {
   assert(img != NULL);
   // Insert code here!
   Image new_img = ImageCreate(img->height, img->width, img->maxval);
-  double sinx = sin(-90 * 3.1415 / 180.0);  // -degrees
-  double cosx = cos(-90 * 3.1415 / 180.0);
+  assert(new_img != NULL);
+  // As imagens vão ser apenas 4 por 4?
+  // Anti clockwise??? -> Resultado
 
-  double xCenter = img->height / 2.0;        // Rotate image by its center.
-  double yCenter = img->width / 2.0;
+  // Usar a função ImageSetPixel e o get i guess
+  //img->width == *img.width
+  
+  // Exemplo da rotação
 
-  for(int x = 0; x < img->height; x++) {
-    double xt = x - xCenter;
-    double xt_cosx = xt * cosx;
-    double xt_sinx = xt * sinx;
-    for(int y = 0; y < img->width; y++) {
-      double yt = y - yCenter;
-      long xRotate = (xt_cosx - yt * sinx) + xCenter;
-      long yRotate = (yt * cosx + xt_sinx) + yCenter;
-
-      if(xRotate >= 0 && xRotate < img->height && yRotate >= 0 && yRotate < img->width) {
-        new_img->pixel[x * new_img->width + y] = img->pixel[xRotate * img->width + yRotate];
-      } else {
-        new_img->pixel[x * new_img->width + y] = 0;  // Set to black if out of bounds
-      }
+  // Esta tem dois for's , vou percorrer como se fosse uma matriz
+  // Comparar a complexidade desta, com a anteriormente desenvolvida -> Guilherme
+  for (int i = 0; i < img->width; i++) {
+    for (int j = 0; j < img->height; j++) {
+    // A função ImageSetPixel já vai buscar o pixel da imagem e guarda o pixel anterior
+    // Função G mete os pixeis de forma linear
+    // Trocar a ordem das coordenadas x e y e reverter 
+      int x = img->height - 1 - j;
+      int y = i;
+      // Pixel da nova imagem
+      ImageSetPixel(new_img, i, j, ImageGetPixel(img, x, y));
+    
     }
   }
-
+  // Para o Guilherme
+  // img é uma imagem
+  // print(img) - > 1 2 3 4
+  // imagerotate(*img)
+  // ou entao img = imagerotate(img)
+  // print(img) -> 4 3 2 1
+  // mas se for
+  // imagerotate(img)
+  // print(img) -> 1 2 3 4
   return new_img;
 }
 
@@ -520,9 +545,36 @@ Image ImageRotate(Image img) {
 /// On success, a new image is returned.
 /// (The caller is responsible for destroying the returned image!)
 /// On failure, returns NULL and errno/errCause are set accordingly.
-Image ImageMirror(Image img) { ///
-  assert (img != NULL);
-  // Insert your code here!
+Image ImageMirror(Image img) {
+  assert(img != NULL);
+  // Insert your code here
+  Image new_img = ImageCreate(img->width, img->height, img->maxval);
+  assert(new_img != NULL);
+
+  for (int i = 0; i < img->width * img->height; i++) {
+    // Obter o x da imagem original
+    int x = i % img->width;
+    // Caso não percebas isto gui, é porque imaginei a imagem como uma matriz
+    // Mas como é uma matriz linear, então o y é o resto da divisão do i pela largura da imagem
+    // No sentido em que tens o indice 3 que corresponde a coordenada 1,0 na matriz e sendo matriz 3x3 3%3 = 0
+    // Obter o y da imagem 
+    
+    // Exemplo
+    // 1 2 3
+    // 4 5 6
+    // 7 8 9
+    // 6 -> 6%3 = 0 
+    // 6 -> 6/3 = 2
+    // 6 -> 2,0
+    // x -> colunas
+    // y -> linhas
+
+    int y = i / img->height;
+    int new_x = img->width - 1 - x; // O x da nova imagem é o x da imagem original invertido
+    ImageSetPixel(new_img, new_x, y, ImageGetPixel(img, x, y));
+  }
+
+  return new_img;
 }
 
 /// Crop a rectangular subimage from img.
@@ -541,6 +593,18 @@ Image ImageCrop(Image img, int x, int y, int w, int h) { ///
   assert (img != NULL);
   assert (ImageValidRect(img, x, y, w, h));
   // Insert your code here!
+  Image new_img = ImageCreate(w, h, img->maxval);
+  assert(new_img != NULL);
+
+  for (int i = 0; i < w * h; i++) {
+    int new_x = i % w; // Como na função acima vamos buscar o x da imagem original daquela posição
+    int new_y = i / w;
+    // Eu estou a criar os pixeis, mas depois preciso de dar set a eles
+    ImageSetPixel(new_img, new_x, new_y, ImageGetPixel(img, x + new_x, y + new_y));
+    // Somar x e y onde começa o retangulo
+  }
+
+  return new_img;
 }
 
 
@@ -555,6 +619,16 @@ void ImagePaste(Image img1, int x, int y, Image img2) { ///
   assert (img2 != NULL);
   assert (ImageValidRect(img1, x, y, img2->width, img2->height));
   // Insert your code here!
+  // Aqui não é preciso criar uma imagem nova
+  for (int i = 0; i < img2->width * img2->height; i++) {
+    int new_x = i % img2->width;
+    int new_y = i / img2->width;
+    ImageSetPixel(img1, x + new_x, y + new_y, ImageGetPixel(img2, new_x, new_y));
+    // Do mesmo método que em ImageCrop
+    // Só que depois damos set ao pixel da imagem 1
+    // Com os novos pixeis da imagem2
+    // Fazemos o x + new_x e y + new_y para sabermos onde começar a colar a imagem
+  }
 }
 
 /// Blend an image into a larger image.
@@ -563,13 +637,13 @@ void ImagePaste(Image img1, int x, int y, Image img2) { ///
 /// Requires: img2 must fit inside img1 at position (x, y).
 /// alpha usually is in [0.0, 1.0], but values outside that interval
 /// may provide interesting effects.  Over/underflows should saturate.
-void ImageBlend(Image img1, int x, int y, Image img2, double alpha) { ///
+void ImageBlend(Image img1, int x, int y, Image img2, double alpha) {
   assert (img1 != NULL);
   assert (img2 != NULL);
   assert (ImageValidRect(img1, x, y, img2->width, img2->height));
   // Insert your code here!
+  
 }
-
 /// Compare an image to a subimage of a larger image.
 /// Returns 1 (true) if img2 matches subimage of img1 at pos (x, y).
 /// Returns 0, otherwise.
@@ -599,5 +673,6 @@ int ImageLocateSubImage(Image img1, int* px, int* py, Image img2) { ///
 /// The image is changed in-place.
 void ImageBlur(Image img, int dx, int dy) { ///
   // Insert your code here!
+  // As imagens vao ser apenas 4 por 4 ou temos que generalizar o codigo
 }
 
