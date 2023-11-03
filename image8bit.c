@@ -379,9 +379,9 @@ static inline int G(Image img, int x, int y) {
   // index = y * (img->width-1) + x;
   // Isto estava mal porque se tivesse um numero numa matriz 3x3 na coordenada (1,1) ele iria estar na posicao index 3
   /*
-  1 2 3
-  4 5 6
-  7 8 9
+  0 1 2
+  3 4 5
+  6 7 8
   */
   // Posição (1,1) -> pode corresponder a 1 ou a 5, mas a posição 3 daria print ao array, 4 ou 3, dependendo se conta index 0 ou 1
   // Se as imagens forem retangulares sempre, posso fazer img->width * img->height
