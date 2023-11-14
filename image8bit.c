@@ -728,8 +728,8 @@ void ImageBlur(Image img, int dx, int dy) {  ///
         count = 0;
         sum = 0;
       }
-      free(pixels);
     }
+      free(pixels);
 }
 
 
