@@ -354,6 +354,7 @@ int ImageValidRect(Image img, int x, int y, int w, int h) {  ///
   // Então o retangulo não está dentro da imagem
   // Isto deve estar mal, tenho que ver melhor, perceber o x,y,w,h que penso que
   // seja o x,y do retangulo e o w,h a largura e altura do retangulo
+  // Tá certo, e bué bem resumido dw
 }
 
 /// Pixel get & set operations
@@ -433,6 +434,8 @@ void ImageNegative(Image img) {  ///
   // Testar se dá todos os valores certos
   // Estou em dúvida se converteria realmente para o oposto se já for um light
   // pixel
+  // Sim, em princípio está certo, o mais branco, pixel=maxval, vira o mais escuro
+  // pixel=0 
 }
 
 /// Apply threshold to image.
@@ -461,6 +464,7 @@ void ImageBrighten(Image img, double factor) {  ///
   // Insert your code here!
   // Podemos otimizar o uso da variável size? -> Verificar se podemos usar uma
   // função
+  // Perguntamos ao stor segunda ig
   int size = img->width * img->height;
   for (int i = 0; i < size; i++) {
     img->pixel[i] = img->pixel[i] * factor + 0.5;
@@ -730,6 +734,9 @@ void ImageBlur(Image img, int dx, int dy) {  ///
       }
     }
       free(pixels);
+      //Conseguimos criar uma versão mais eficiente que não dependa 
+      // do tamanho da janela de blur, o stor explicou, vou tentar 
+      //implementar depois de guardar esta para o relatorio
 }
 
 
