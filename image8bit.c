@@ -138,6 +138,11 @@ static int check(int condition, const char* failmsg) {
   return condition;
 }
 
+//Calcular o tamanho de uma imagem
+static int GetSize(Image img){
+  return img->height*img->width;
+}
+
 /// Init Image library.  (Call once!)
 /// Currently, simply calibrate instrumentation and set names of counters.
 void ImageInit(void) {  ///
@@ -427,7 +432,7 @@ void ImageSetPixel(Image img, int x, int y, uint8 level) {  ///
 void ImageNegative(Image img) {  ///
   assert(img != NULL);
   // Insert your code here!
-  int size = img->width * img->height;
+  int size = GetSize(img);
   for (int i = 0; i < size; i++) {
     img->pixel[i] = img->maxval - img->pixel[i];
   }
@@ -444,7 +449,7 @@ void ImageNegative(Image img) {  ///
 void ImageThreshold(Image img, uint8 thr) {  ///
   assert(img != NULL);
   // Insert your code here!
-  int size = img->width * img->height;
+  int size = GetSize(img);
   for (int i = 0; i < size; i++) {
     if (img->pixel[i] < thr) {
       img->pixel[i] = 0;
@@ -464,8 +469,8 @@ void ImageBrighten(Image img, double factor) {  ///
   // Insert your code here!
   // Podemos otimizar o uso da variável size? -> Verificar se podemos usar uma
   // função
-  // Perguntamos ao stor segunda ig
-  int size = img->width * img->height;
+  // Podemos, já coloquei
+  int size = GetSize(img);
   for (int i = 0; i < size; i++) {
     img->pixel[i] = img->pixel[i] * factor + 0.5;
     // Porque não dava para dar round então + 0.5
