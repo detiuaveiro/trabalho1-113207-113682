@@ -675,7 +675,7 @@ int ImageMatchSubImage(Image img1, int x, int y, Image img2) {  ///
   // Insert your code here!
   for (int i = 0; i < img2->height; i++) {
     for (int j = 0; j < img2->width; j++) {
-      if (ImageGetPixel(img1, x + i, y + j) != ImageGetPixel(img2, i, j)) {
+      if (ImageGetPixel(img1, x + j, y + i) != ImageGetPixel(img2, j, i)) {
         comps+=1;
         return 0;
       }
@@ -694,7 +694,7 @@ int ImageLocateSubImage(Image img1, int* px, int* py, Image img2) {  ///
   // Insert your code here!
   for (int i = 0; i < img1->height - img2->height+1; i++) {
     for (int j = 0; j < img1->width - img2->width+1; j++) {
-      if (ImageMatchSubImage(img1, i, j, img2)) {
+      if (ImageMatchSubImage(img1, j, i, img2)) {
         *px = i;
         *py = j;
         return 1;
