@@ -710,7 +710,7 @@ int ImageLocateSubImage(Image img1, int* px, int* py, Image img2) {  ///
 /// Each pixel is substituted by the mean of the pixels in the rectangle
 /// [x-dx, x+dx]x[y-dy, y+dy].
 /// The image is changed in-place.
-void ImageBlur(Image img, int dx, int dy) {  ///
+void ImageBlurOld1(Image img, int dx, int dy) {  ///
   // Insert your code here!
   // Criar uma imagem nova para os pixeis que já foram blurred não influenciarem os píxeis que vão ser blurred...
     Image img2 = ImageCreate(img->width, img->height, img->maxval);
@@ -747,7 +747,7 @@ void ImageBlur(Image img, int dx, int dy) {  ///
       //implementar depois de guardar esta para o relatorio
 }
 
-void ImageBlur2(Image img, int dx, int dy) {  ///
+void ImageBlur(Image img, int dx, int dy) {  ///
   // Insert your code here!
   // Criar uma imagem nova para os pixeis que já foram blurred não influenciarem os píxeis que vão ser blurred...
     Image img2 = ImageCreate(img->width, img->height, img->maxval);
