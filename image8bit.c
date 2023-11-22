@@ -719,8 +719,9 @@ void ImageBlur(Image img, int dx, int dy) {
   for (int i = 0; i < img->height - img->height+1; i++) {
     for (int j = 0; j < img->width - img->width+1; j++) {
       int index=G(img,j,i);
+      cumsum[index]+=ImageGetPixel(img,j,i);
       if(i>0){
-        cumsum[index]+=cumsum[index-img->width]+ImageGetPixel(img,j,i);
+        cumsum[index]+=cumsum[index-img->width];
       }
       if(j>0){
         cumsum[index]+=cumsum[index-1];
