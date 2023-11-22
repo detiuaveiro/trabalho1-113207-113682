@@ -712,14 +712,14 @@ int ImageLocateSubImage(Image img1, int* px, int* py, Image img2) {  ///
 /// The image is changed in-place.
 void ImageBlur(Image img, int dx, int dy) { 
   int* cumsum = malloc(GetSize(img) * sizeof(int));
-  cumsum[0]=ImageGetPixel(img,0,0);
   int C1,C2,C3,C4;
   int lex,ldx,lsy,liy;
-  int ha=2*dy +1,ca=2*dx+1;
+  int ha=2*dy +1;
+  int ca=2*dx+1;
   for (int i = 0; i < img->height - img->height+1; i++) {
     for (int j = 0; j < img->width - img->width+1; j++) {
       int index=G(img,j,i);
-      cumsum[index]+=ImageGetPixel(img,j,i);
+      cumsum[index]=ImageGetPixel(img,j,i);
       if(i>0){
         cumsum[index]+=cumsum[index-img->width];
       }
@@ -735,8 +735,8 @@ void ImageBlur(Image img, int dx, int dy) {
         
         lex=j-dx-1; ldx= j+dx;
         lsy=i-dy-1; liy=i+dy;
-        if(ldx>=img->width){ldx=img->width-1; ca=ca-(j+dx-img->width); }
-        if(liy>=img->height){liy=img->height-1;ha= ha-(i+dy-img->height);}
+        if(ldx>=img->width){ldx=img->width-1; ca=ca-(dx-img->width); }
+        if(liy>=img->height){liy=img->height-1;ha= ha-(dy-img->height);}
         C4=cumsum[G(img,ldx,liy)];
         if(lex<0){
           C1=0;
@@ -763,9 +763,6 @@ void ImageBlur(Image img, int dx, int dy) {
           C2=cumsum[G(img,ldx,lsy)];
           C3=cumsum[G(img,lex,liy)];
         } 
-        
-
-
         blurA=ca*ha;
         ImageSetPixel(img,j,i,(C4-C3-C2+C1)/blurA);
         ca=(2 * dx + 1);
