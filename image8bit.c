@@ -747,4 +747,31 @@ void ImageBlur(Image img, int dx, int dy) {  ///
       //implementar depois de guardar esta para o relatorio
 }
 
-
+void ImageBlur2(Image img, int dx, int dy) {  ///
+  // Insert your code here!
+  // Criar uma imagem nova para os pixeis que já foram blurred não influenciarem os píxeis que vão ser blurred...
+    Image img2 = ImageCreate(img->width, img->height, img->maxval);
+    // A alocação vai falhar?
+    // Provavelmente não, só se ficar sem memória.
+    for (int g = 0; g < img->width * img->height; g++) {
+      img2->pixel[g] = img->pixel[g];
+    }
+    int sum = 0;
+    int size = (2 * dx + 1) * (2 * dy + 1);
+    for (int i = 0; i < img->height; i++) {
+      for (int j = 0; j < img->width; j++) {
+        for (int k = -dx; k <= dx; k++) {
+          for (int l = -dy; l <= dy; l++) {
+            if (ImageValidPos(img, i + k, j + l)) {
+              sum+= ImageGetPixel(img2, i + k, j + l);
+            }
+          }
+        }
+        ImageSetPixel(img, i, j, (((double)sum / size) + 0.5));
+        sum = 0;
+      }
+    }
+      //Conseguimos criar uma versão mais eficiente que não dependa 
+      // do tamanho da janela de blur, o stor explicou, vou tentar 
+      //implementar depois de guardar esta para o relatorio
+}
