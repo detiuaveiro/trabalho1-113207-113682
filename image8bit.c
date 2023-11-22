@@ -710,6 +710,78 @@ int ImageLocateSubImage(Image img1, int* px, int* py, Image img2) {  ///
 /// Each pixel is substituted by the mean of the pixels in the rectangle
 /// [x-dx, x+dx]x[y-dy, y+dy].
 /// The image is changed in-place.
+void ImageBlur(Image img, int dx, int dy) { 
+  int* cumsum = malloc(GetSize(img) * sizeof(int));
+  cumsum[0]=ImageGetPixel(img,0,0);
+  int C1,C2,C3,C4;
+  int lex,ldx,lsy,liy;
+  int ha=2*dy +1,ca=2*dx+1;
+  for (int i = 0; i < img->height - img->height+1; i++) {
+    for (int j = 0; j < img->width - img->width+1; j++) {
+      int index=G(img,j,i);
+      if(i>0){
+        cumsum[index]+=cumsum[index-img->width];
+      }
+      if(j>0){
+        cumsum[index]+=cumsum[index-1];
+      }
+
+    }
+  }
+  int blurA = (2 * dx + 1) * (2 * dy + 1);
+  for (int i = 0; i < img->height; i++) {
+      for (int j = 0; j < img->width; j++) {
+        
+        lex=j-dx-1; ldx= j+dx;
+        lsy=i-dy-1; liy=i+dy;
+        if(ldx>=img->width){ldx=img->width-1; ca=ca-(j+dx-img->width); }
+        if(liy>=img->height){liy=img->height-1;ha= ha-(i+dy-img->height);}
+        C4=cumsum[G(img,j+dx,i+dy)];
+        if(lex<0){
+          C1=0;
+          C3=0;
+          ca=ca+lex;
+          if(lsy<0){
+            C2=0;
+            ha=ha+lsy;
+          } 
+          else {
+            C2=cumsum[G(img,j+dx,i-dy-1)];
+          }
+        }
+        else {
+          if(lsy<0){
+            C2=0;
+            C1=0;   
+            C3=cumsum[G(img,j-dx-1,i+dy)];
+            ha=ha+lsy;
+          }
+        }
+        if(lsy>=0 && lex>=0){
+          C1=cumsum[G(img,j-dx-1,i-dy-1)];
+          C2=cumsum[G(img,j+dx,i-dy-1)];
+          C3=cumsum[G(img,j-dx-1,i+dy)];
+        } 
+        
+
+
+        blurA=ca*ha;
+        ImageSetPixel(img,j,i,(C4-C3-C2+C1)/blurA);
+        blurA = (2 * dx + 1) * (2 * dy + 1);
+        
+
+    }
+  }
+
+}
+
+
+
+
+
+
+
+
 void ImageBlurOld1(Image img, int dx, int dy) {  ///
   // Insert your code here!
   // Criar uma imagem nova para os pixeis que já foram blurred não influenciarem os píxeis que vão ser blurred...
@@ -747,7 +819,7 @@ void ImageBlurOld1(Image img, int dx, int dy) {  ///
       //implementar depois de guardar esta para o relatorio
 }
 
-void ImageBlur(Image img, int dx, int dy) {  ///
+void ImageBlurOld2(Image img, int dx, int dy) {  ///
   // Insert your code here!
   // Criar uma imagem nova para os pixeis que já foram blurred não influenciarem os píxeis que vão ser blurred...
     Image img2 = ImageCreate(img->width, img->height, img->maxval);
@@ -778,3 +850,6 @@ void ImageBlur(Image img, int dx, int dy) {  ///
       // do tamanho da janela de blur, o stor explicou, vou tentar 
       //implementar depois de guardar esta para o relatorio
 }
+
+
+
