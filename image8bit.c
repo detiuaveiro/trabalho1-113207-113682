@@ -720,7 +720,7 @@ void ImageBlur(Image img, int dx, int dy) {
     for (int j = 0; j < img->width - img->width+1; j++) {
       int index=G(img,j,i);
       if(i>0){
-        cumsum[index]+=cumsum[index-img->width];
+        cumsum[index]+=cumsum[index-img->width]+ImageGetPixel(img,j,i);
       }
       if(j>0){
         cumsum[index]+=cumsum[index-1];
@@ -736,7 +736,7 @@ void ImageBlur(Image img, int dx, int dy) {
         lsy=i-dy-1; liy=i+dy;
         if(ldx>=img->width){ldx=img->width-1; ca=ca-(j+dx-img->width); }
         if(liy>=img->height){liy=img->height-1;ha= ha-(i+dy-img->height);}
-        C4=cumsum[G(img,j+dx,i+dy)];
+        C4=cumsum[G(img,ldx,liy)];
         if(lex<0){
           C1=0;
           C3=0;
@@ -746,21 +746,21 @@ void ImageBlur(Image img, int dx, int dy) {
             ha=ha+lsy;
           } 
           else {
-            C2=cumsum[G(img,j+dx,i-dy-1)];
+            C2=cumsum[G(img,ldx,lsy)];
           }
         }
         else {
           if(lsy<0){
             C2=0;
             C1=0;   
-            C3=cumsum[G(img,j-dx-1,i+dy)];
+            C3=cumsum[G(img,lex,liy)];
             ha=ha+lsy;
           }
         }
         if(lsy>=0 && lex>=0){
-          C1=cumsum[G(img,j-dx-1,i-dy-1)];
-          C2=cumsum[G(img,j+dx,i-dy-1)];
-          C3=cumsum[G(img,j-dx-1,i+dy)];
+          C1=cumsum[G(img,lex,lsy)];
+          C2=cumsum[G(img,ldx,lsy)];
+          C3=cumsum[G(img,lex,liy)];
         } 
         
 
