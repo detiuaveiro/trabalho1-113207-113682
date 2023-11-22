@@ -757,6 +757,7 @@ void ImageBlur(Image img, int dx, int dy) {  ///
       img2->pixel[g] = img->pixel[g];
     }
     int sum = 0;
+    int count = 0;
     int size = (2 * dx + 1) * (2 * dy + 1);
     for (int i = 0; i < img->height; i++) {
       for (int j = 0; j < img->width; j++) {
@@ -764,10 +765,12 @@ void ImageBlur(Image img, int dx, int dy) {  ///
           for (int l = -dy; l <= dy; l++) {
             if (ImageValidPos(img, j + k, i + l)) {
               sum+= ImageGetPixel(img2, j + k, i + l);
+              count++;
             }
           }
         }
-        ImageSetPixel(img, j, i, (((double)sum / size) + 0.5));
+        ImageSetPixel(img, j, i, (((double)sum / count) + 0.5));
+        count = 0;
         sum = 0;
       }
     }
