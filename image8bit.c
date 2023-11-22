@@ -767,9 +767,8 @@ void ImageBlur(Image img, int dx, int dy) {
 
         blurA=ca*ha;
         ImageSetPixel(img,j,i,(C4-C3-C2+C1)/blurA);
-        blurA = (2 * dx + 1) * (2 * dy + 1);
-        
-
+        ca=(2 * dx + 1);
+        ha=(2 * dy + 1);
     }
   }
 
