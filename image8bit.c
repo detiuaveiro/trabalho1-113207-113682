@@ -740,7 +740,6 @@ void ImageBlur(Image img, int dx, int dy) {
     if(lsy<0){
       C2=0;
       C1=0;   
-      C3=cumsum[G(img,lex,liy)];
       ha=ha+lsy;
     } 
     if(liy>=img->height){liy=img->height-1;ha=ha-(dy-(img->height-i-1));}
@@ -760,6 +759,9 @@ void ImageBlur(Image img, int dx, int dy) {
           if(lsy>=0){
             C1=cumsum[G(img,lex,lsy)];
             C2=cumsum[G(img,ldx,lsy)];
+            C3=cumsum[G(img,lex,liy)];
+          }
+          else{
             C3=cumsum[G(img,lex,liy)];
           }
         } 
