@@ -713,7 +713,7 @@ int ImageLocateSubImage(Image img1, int* px, int* py, Image img2) {  ///
 void ImageBlur(Image img, int dx, int dy) { 
   uint8_t* cumsum = malloc(GetSize(img) * sizeof(uint8_t));
   int index;
-  int C1,C2,C3,C4;
+  uint8_t C1,C2,C3,C4;
   int lex,ldx,lsy,liy;
   int ha=2*dy+1;
   int ca=2*dx+1;
