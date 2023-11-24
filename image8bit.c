@@ -710,72 +710,76 @@ int ImageLocateSubImage(Image img1, int* px, int* py, Image img2) {  ///
 /// Each pixel is substituted by the mean of the pixels in the rectangle
 /// [x-dx, x+dx]x[y-dy, y+dy].
 /// The image is changed in-place.
-void ImageBlur(Image img, int dx, int dy) { 
-  uint8_t* cumsum = malloc(GetSize(img) * sizeof(uint8_t));
-  int index;
-  uint8_t C1,C2,C3,C4;
-  int lex,ldx,lsy,liy;
-  int ha=2*dy+1;
-  int ca=2*dx+1;
-  for (int i = 0; i < img->height; i++) {
-    for (int j = 0; j < img->width; j++) {
-      index=G(img,j,i);
-      cumsum[index]=ImageGetPixel(img,j,i);
-      if(i>0){
-        cumsum[index]+=cumsum[(index-img->width)];
-      }
-      if(j>0){
-        cumsum[index]+=cumsum[(index-1)];
-      }
-      if(j>0 && i>0){
-        cumsum[index]-=cumsum[(index-1-img->width)];
-      }
+void ImageBlur(Image img, int dx, int dy) {
+  assert(img != NULL);
+  assert(dx >= 0);
+  assert(dy >= 0);
 
-    }
-  }
-  int blurA = ha * ca;
-  for (int i = 0; i < img->height; i++) {
-    lsy=i-dy-1; liy=i+dy;
-    ha=(2 * dy + 1);
-    if(lsy<0){
-      C2=0;
-      C1=0;   
-      ha=ha+lsy;
-    } 
-    if(liy>=img->height){liy=img->height-1;ha=ha-(dy-(img->height-i-1));}
-      for (int j = 0; j < img->width; j++) {      
-        lex=j-dx-1; ldx= j+dx;
-        if(ldx>=img->width){ldx=img->width-1; ca=ca-(dx-(img->width-j-1)); }
-        C4=cumsum[G(img,ldx,liy)];
-        if(lex<0){
-          C1=0;
-          C3=0;
-          ca=ca+lex;
-          if(lsy>=0) {
-            C2=cumsum[G(img,ldx,lsy)];
-          }
-        }
-        else {
-          if(lsy>=0){
-            C1=cumsum[G(img,lex,lsy)];
-            C2=cumsum[G(img,ldx,lsy)];
-            C3=cumsum[G(img,lex,liy)];
-          }
-          else{
-            C3=cumsum[G(img,lex,liy)];
-          }
-        } 
-        blurA=ca*ha;
-        ImageSetPixel(img,j,i,(C4-C3-C2+C1)/blurA);
-        ca=(2 * dx + 1);  
-    }
+  Image img2 = ImageCreate(img->width, img->height, img->maxval);
  
-  }
-  free(cumsum);
+  // percorre os piexeis do retangulo
+  // e guarda os seus valores
+  // substituis os pixeis da imagem pelos correspondentes da mesma poiscao do retangulo
+
+  
+
 }
 
 
 
+
+
+
+
+
+
+
+void ImageBlurSubOptimal(Image img, int dx, int dy) { 
+  assert(img != NULL);
+  assert(dx >= 0);
+  assert(dy >= 0);
+
+  // alocar um array que vai conter os valores dos pixeis blurred
+  double* blurred_pixels = malloc(img->width * img->height * sizeof(double));
+  assert(blurred_pixels != NULL);
+
+  // fazer um loop pelos pixeis da imagem original e calcular a media dos pixeis no retangulo
+  // [x-dx, x+dx]x[y-dy, y+dy] x e y sao as coordenadas do pixel
+  // dx e dy vai ser o tamanho do retangulo
+
+  for (int pixel = 0; pixel < img->width * img->height; pixel++) {
+    int x = pixel % img->width;
+    int y = pixel / img->width;
+    // printf("x: %d, y: %d\n", x, y);
+    // soma dos pixeis
+    int sum = 0;
+    // count para pixeis validos
+    int count = 0;
+
+    // loop no retangulo
+    for (int i = -dx; i <= dx; i++) {
+      for (int j = -dy; j <= dy; j++) {
+        //primeiro vamos ter que verificar se a pioscao e valida
+        if (ImageValidPos(img, x + i, y + j)) {
+          // adcioanr o pixel a soma
+          sum += ImageGetPixel(img, x + i, y + j);
+          //incrementar o count
+          count++;
+        }
+      }
+    }
+    // calcular a media e arredondar
+    // dar cast a double
+    blurred_pixels[pixel] = (double)sum / count;
+
+  }
+
+  // //copy the blurred pixels to the original image
+  for (int pixel = 0; pixel < img->width * img->height; pixel++) {
+    img->pixel[pixel] = blurred_pixels[pixel] + 0.5;
+  }
+  free(blurred_pixels);
+}
 
 
 
@@ -829,7 +833,7 @@ void ImageBlurOld2(Image img, int dx, int dy) {  ///
     }
     int sum = 0;
     int count = 0;
-    int size = (2 * dx + 1) * (2 * dy + 1);
+    // int size = (2 * dx + 1) * (2 * dy + 1);
     for (int i = 0; i < img->height; i++) {
       for (int j = 0; j < img->width; j++) {
         for (int k = -dx; k <= dx; k++) {
