@@ -192,6 +192,7 @@ int main(int ac, char* av[]) {
       fprintf(stderr, "Locating I%d in I%d\n", n-2, n-1);
       if (ImageLocateSubImage(img[n-1], &x, &y, img[n-2])) {
         printf("# FOUND (%d,%d)\n", x, y);
+        InstrPrint(); 
       } else {
         printf("# NOTFOUND\n");
       }

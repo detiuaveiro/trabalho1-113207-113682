@@ -715,7 +715,7 @@ void ImageBlur(Image img, int dx, int dy) {
   int index;
   int C1,C2,C3,C4;
   int lex,ldx,lsy,liy;
-  int ha=2*dy +1;
+  int ha=2*dy+1;
   int ca=2*dx+1;
   for (int i = 0; i < img->height; i++) {
     for (int j = 0; j < img->width; j++) {
@@ -728,52 +728,48 @@ void ImageBlur(Image img, int dx, int dy) {
         cumsum[index]+=cumsum[(index-1)];
       }
       if(j>0 && i>0){
-        cumsum[index]+=cumsum[(index-1-img->width)];
+        cumsum[index]-=cumsum[(index-1-img->width)];
       }
 
     }
   }
-  int blurA = (2 * dx + 1) * (2 * dy + 1);
+  int blurA = ha * ca;
   for (int i = 0; i < img->height; i++) {
-      for (int j = 0; j < img->width; j++) {
-        
+    lsy=i-dy-1; liy=i+dy;
+    ha=(2 * dy + 1);
+    if(lsy<0){
+      C2=0;
+      C1=0;   
+      C3=cumsum[G(img,lex,liy)];
+      ha=ha+lsy;
+    } 
+    if(liy>=img->height){liy=img->height-1;ha=ha-(dy-(img->height-i-1));}
+      for (int j = 0; j < img->width; j++) {      
         lex=j-dx-1; ldx= j+dx;
-        lsy=i-dy-1; liy=i+dy;
-        if(ldx>=img->width){ldx=img->width-1; ca=ca-(dx-(img->width-j)); }
-        if(liy>=img->height){liy=img->height-1;ha= ha-(dy-(img->height-i));}
+        if(ldx>=img->width){ldx=img->width-1; ca=ca-(dx-(img->width-j-1)); }
         C4=cumsum[G(img,ldx,liy)];
         if(lex<0){
           C1=0;
           C3=0;
           ca=ca+lex;
-          if(lsy<0){
-            C2=0;
-            ha=ha+lsy;
-          } 
-          else {
+          if(lsy>=0) {
             C2=cumsum[G(img,ldx,lsy)];
           }
         }
         else {
-          if(lsy<0){
-            C2=0;
-            C1=0;   
+          if(lsy>=0){
+            C1=cumsum[G(img,lex,lsy)];
+            C2=cumsum[G(img,ldx,lsy)];
             C3=cumsum[G(img,lex,liy)];
-            ha=ha+lsy;
           }
-        }
-        if(lsy>=0 && lex>=0){
-          C1=cumsum[G(img,lex,lsy)];
-          C2=cumsum[G(img,ldx,lsy)];
-          C3=cumsum[G(img,lex,liy)];
         } 
         blurA=ca*ha;
         ImageSetPixel(img,j,i,(C4-C3-C2+C1)/blurA);
-        ca=(2 * dx + 1);
-        ha=(2 * dy + 1);
+        ca=(2 * dx + 1);  
     }
+ 
   }
-
+  free(cumsum);
 }
 
 
