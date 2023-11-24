@@ -711,7 +711,7 @@ int ImageLocateSubImage(Image img1, int* px, int* py, Image img2) {  ///
 /// [x-dx, x+dx]x[y-dy, y+dy].
 /// The image is changed in-place.
 void ImageBlur(Image img, int dx, int dy) { 
-  int* cumsum = malloc(GetSize(img) * sizeof(int));
+  uint8_t* cumsum = malloc(GetSize(img) * sizeof(uint8_t));
   int index;
   int C1,C2,C3,C4;
   int lex,ldx,lsy,liy;
@@ -722,10 +722,10 @@ void ImageBlur(Image img, int dx, int dy) {
       index=G(img,j,i);
       cumsum[index]=ImageGetPixel(img,j,i);
       if(i>0){
-        cumsum[index]+=cumsum[index-img->width];
+        cumsum[index]+=ImageGetPixel(img,j,i-1);
       }
       if(j>0){
-        cumsum[index]+=cumsum[index-1];
+        cumsum[index]+=cumsum[(index-1)];
       }
 
     }
