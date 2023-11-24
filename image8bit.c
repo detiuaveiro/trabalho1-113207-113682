@@ -722,10 +722,13 @@ void ImageBlur(Image img, int dx, int dy) {
       index=G(img,j,i);
       cumsum[index]=ImageGetPixel(img,j,i);
       if(i>0){
-        cumsum[index]+=ImageGetPixel(img,j,i-1);
+        cumsum[index]+=cumsum[(index-img->width)];
       }
       if(j>0){
         cumsum[index]+=cumsum[(index-1)];
+      }
+      if(j>0 && i>0){
+        cumsum[index]+=cumsum[(index-1-img->width)];
       }
 
     }
