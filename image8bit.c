@@ -714,81 +714,206 @@ int ImageLocateSubImage(Image img1, int* px, int* py, Image img2) {  ///
 /// Each pixel is substituted by the mean of the pixels in the rectangle
 /// [x-dx, x+dx]x[y-dy, y+dy].
 /// The image is changed in-place.
-void ImageBlurWrong(Image img, int dx, int dy) { 
-  uint8_t* cumsum = malloc(GetSize(img) * sizeof(uint8_t));
-  int index;
-  uint8_t C1,C2,C3,C4;
-  int lex,ldx,lsy,liy;
-  int ha=2*dy+1;
-  int ca=2*dx+1;
-  for (int i = 0; i < img->height; i++) {
-    for (int j = 0; j < img->width; j++) {
-      index=G(img,j,i);
-      cumsum[index]=ImageGetPixel(img,j,i);
-      if(i>0){
-        cumsum[index]+=cumsum[(index-img->width)];
-      }
-      if(j>0){
-        cumsum[index]+=cumsum[(index-1)];
-      }
-      if(j>0 && i>0){
-        cumsum[index]-=cumsum[(index-1-img->width)];
-      }
+// void ImageBlurNotCorrected(Image img, int dx, int dy) {
+//   // Allocate memory for cumulative sum array
+//   uint8_t* cumsum = malloc(GetSize(img) * sizeof(uint8_t));
 
-    }
-  }
-  int blurA = ha * ca;
-  for (int i = 0; i < img->height; i++) {
-    lsy=i-dy-1; liy=i+dy;
-    ha=(2 * dy + 1);
-    if(lsy<0){
-      C2=0;
-      C1=0;   
-      ha=ha+lsy;
-    } 
-    if(liy>=img->height){liy=img->height-1;ha=ha-(dy-(img->height-i-1));}
-      for (int j = 0; j < img->width; j++) {      
-        lex=j-dx-1; ldx= j+dx;
-        if(ldx>=img->width){ldx=img->width-1; ca=ca-(dx-(img->width-j-1)); }
-        C4=cumsum[G(img,ldx,liy)];
-        if(lex<0){
-          C1=0;
-          C3=0;
-          ca=ca+lex;
-          if(lsy>=0) {
-            C2=cumsum[G(img,ldx,lsy)];
-          }
-        }
-        else {
-          if(lsy>=0){
-            C1=cumsum[G(img,lex,lsy)];
-            C2=cumsum[G(img,ldx,lsy)];
-            C3=cumsum[G(img,lex,liy)];
-          }
-          else{
-            C3=cumsum[G(img,lex,liy)];
-          }
-        } 
-        blurA=ca*ha;
-        ImageSetPixel(img,j,i,(C4-C3-C2+C1)/blurA);
-        ca=(2 * dx + 1);  
-    }
- 
-  }
-  free(cumsum);
+//   // Variables for pixel indices and cumulative sums
+//   int index;
+//   uint8_t C1 = 0, C2 = 0, C3, C4;
+
+//   // Variables for loop boundaries and indices
+//   int lex, ldx, lsy, liy;
+
+//   // Variables for blur dimensions
+//   int ha, ca;
+
+//   // Calculate cumulative sum for each pixel
+//   for (int i = 0; i < img->height; i++) {
+//     for (int j = 0; j < img->width; j++) {
+//       index = G(img, j, i);
+//       cumsum[index] = ImageGetPixel(img, j, i);
+
+//       // Add cumulative sum from the pixel above
+//       if (i > 0) {
+//         cumsum[index] += cumsum[index - img->width];
+//       }
+
+//       // Add cumulative sum from the pixel to the left
+//       if (j > 0) {
+//         cumsum[index] += cumsum[index - 1];
+//       }
+
+//       // Subtract cumulative sum from the pixel diagonally above and to the left
+//       if (j > 0 && i > 0) {
+//         cumsum[index] -= cumsum[index - 1 - img->width];
+//       }
+//     }
+//   }
+
+//   // Apply blur to each pixel
+//   for (int i = 0; i < img->height; i++) {
+//     lsy = i - dy - 1;
+//     liy = i + dy;
+//     ha = 2 * dy + 1;
+
+//     // Handle boundary conditions for the top of the image
+//     if (lsy < 0) {
+//       C2 = 0;
+//       C1 = 0;
+//       ha = ha + lsy;
+//     }
+
+//     // Handle boundary conditions for the bottom of the image
+//     if (liy >= img->height) {
+//       liy = img->height - 1;
+//       ha = ha - (dy - (img->height - i - 1));
+//     }
+
+//     for (int j = 0; j < img->width; j++) {
+//       lex = j - dx - 1;
+//       ldx = j + dx;
+
+//       // Handle boundary conditions for the right of the image
+//       if (ldx >= img->width) {
+//         ldx = img->width - 1;
+//       }
+
+//       // Calculate C4, the cumulative sum of pixel values in the blur area
+//       C4 = cumsum[G(img, ldx, liy)];
+
+//       // Handle boundary conditions for the left of the image
+//       if (lex < 0) {
+//         C1 = 0;
+//         C3 = 0;
+
+//         // Calculate C2 if lsy is greater than or equal to 0
+//         if (lsy >= 0) {
+//           C2 = cumsum[G(img, ldx, lsy)];
+//         }
+//       } else {
+//         // Calculate C1, C2, and C3 based on cumulative sums
+//         if (lsy >= 0) {
+//           C1 = cumsum[G(img, lex, lsy)];
+//           C2 = cumsum[G(img, ldx, lsy)];
+//           C3 = cumsum[G(img, lex, liy)];
+//         } else {
+//           C3 = cumsum[G(img, lex, liy)];
+//         }
+//       }
+
+//       // Calculate blur area for each pixel
+//       ca = 2 * dx + 1;
+
+//       // Calculate the final pixel value after applying blur
+//       ImageSetPixel(img, j, i, (C4 - C3 - C2 + C1) / (ha * ca));
+//     }
+//   }
+
+//   // Free allocated memory
+//   free(cumsum);
+// }
+
+
+// linear index from row, column, and width
+int idx(int row, int col, int width) {
+  return row * width + col;
+}
+int max(double a, double b) {
+  return a > b ? a : b;
+}
+int min(double a, double b) {
+  return a < b ? a : b;
 }
 
+int rround(double x) {
+  return (int) (x + 0.5);
+}
 
+void ImageBlur(Image img, int dx, int dy) {
+  assert(img != NULL);
+  assert(dx >= 0);
+  assert(dy >= 0);
 
+  //this is the sum of pixel values for each pixel (x,y) of the rectangle from (0,0) to (x,y)
+  double *sums = malloc(img->width * img->height * sizeof(double));
+  assert(sums != NULL);
 
+  // estes quatro for's podem ser substituidos por dois for's
+  int *counts = malloc(img->width * img->height * sizeof(int));
+  
+  //for each row, this calculates the sums of all pixels left of each pixel
+  for (int row = 0; row < img->height; row++) {
+    for (int col = 1; col < img->width; col++) {
+      sums[idx(row, col, img->width)] = sums[idx(row, col - 1, img->width)] + ImageGetPixel(img, col, row);
+    }
+  }
 
+  //here, for each column, the sum of all pixels from (0,0) to (x,y) is calculated
+  //adding the sum of the pixels above the current pixel, which itself contains the sum of all pixels left of it
+  //the result of this is that sums[idx(row, col, img->width)] contains the sum of all pixels in the rectangle from (0,0) to (row,col)
+  for (int col = 0; col < img->width; col++) {
+    for (int row = 1; row < img->height; row++) {
+      sums[idx(row, col, img->height)] += sums[idx(row - 1, col, img->height)];
+    }
+  }
 
+  for (int row = 0; row < img->height; row++) {
+    for (int col = 0; col < img->width; col++) {
+      //calculate boundaries
+      int x_min = max(0, col - dx + 1);
+      int x_max = min(col + dx, img->width - 1);
+      int y_min = max(0, row - dy + 1);
+      int y_max = min(row + dy, img->height - 1);
 
+      //this is the number of pixels in the rectangle
+      int pixels = (x_max - x_min + 1) * (y_max - y_min + 1);
+      counts[idx(row, col, img->width)] = pixels;
 
+      //what happens is
+      //       0         m          n
+      //      0+--------+----------+
+      //       |   a    |    b     |
+      //      p+--------+----------+
+      //       |        |          |
+      //       |   c    |     d    |
+      //       |        |          |
+      //      q+--------+----------+
 
+      // a is the rectangle from (0,0) to (p,m)
+      // b is the rectangle from (0,0) to (p,n)
+      // c is the rectangle from (0,0) to (q,m)
+      // d is the rectangle from (0,0) to (q,n)
+      // the pixel (row,col) is in the middle of the rectangle from (p,m) to (q,n) (where the letter d is)
+      // the sum of all pixels surounding (row,col) is therefore d-c-b+a
 
+      int a = y_min< 1 || x_min< 1 ? 0 : sums[idx(y_min-1, x_min-1, img->width)];
+      int b = y_min< 1 ? 0 : sums[idx(y_min-1, x_max, img->width)];
+      int c = x_min< 1 ? 0 : sums[idx(y_max, x_min-1, img->width)];
+      int d = sums[idx(y_max, x_max, img->width)];
 
-void ImageBlur(Image img, int dx, int dy) { 
+      //value is
+      int val = d-c-b+a;
+      double pixel = (double)val/pixels;
+      img->pixel[idx(row, col, img->width)] = rround(pixel);
+
+      // if (col == 0) {
+      //   //print row and count and xmin, xmax, ymin, ymax
+      //   printf("row %d\n", row);
+      //   printf("count %d\n", pixels);
+      //   printf("xmin %d xmax %d ymin %d ymax %d\n", x_min, x_max, y_min, y_max);
+      // }
+      // exit(0);
+
+    }
+  }
+  free(sums);
+
+}
+
+// ##########################################################3
+
+void ImageBlurs(Image img, int dx, int dy) { 
   assert(img != NULL);
   assert(dx >= 0);
   assert(dy >= 0);
@@ -796,6 +921,7 @@ void ImageBlur(Image img, int dx, int dy) {
   // alocar um array que vai conter os valores dos pixeis blurred
   double* blurred_pixels = malloc(img->width * img->height * sizeof(double));
   assert(blurred_pixels != NULL);
+
 
   // fazer um loop pelos pixeis da imagem original e calcular a media dos pixeis no retangulo
   // [x-dx, x+dx]x[y-dy, y+dy] x e y sao as coordenadas do pixel
@@ -825,13 +951,16 @@ void ImageBlur(Image img, int dx, int dy) {
     // calcular a media e arredondar
     // dar cast a double
     blurred_pixels[pixel] = (double)sum / count;
+    //print count if row and col are 0
     divs++;
 
   }
 
+  FILE* f = fopen("../counts.txt", "w");
   // //copy the blurred pixels to the original image
   for (int pixel = 0; pixel < img->width * img->height; pixel++) {
     img->pixel[pixel] = blurred_pixels[pixel] + 0.5;
+    fprintf(f, "%d\n", img->pixel[pixel]);
   }
   free(blurred_pixels);
 }
