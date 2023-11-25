@@ -730,7 +730,7 @@ void ImageBlur(Image img, int dx, int dy) {
   assert(dy >= 0);
 
   //this is the sum of pixel values for each pixel (x,y) of the rectangle from (0,0) to (x,y)
-  double sums = malloc(GetSize(img) sizeof(double));
+  double *sums = malloc(GetSize(img) * sizeof(double));
   assert(sums != NULL);
   int index;
    for (int i = 0; i < img->height; i++) {
