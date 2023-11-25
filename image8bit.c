@@ -723,6 +723,84 @@ int ImageLocateSubImage(Image img1, int* px, int* py, Image img2) {  ///
 /// Each pixel is substituted by the mean of the pixels in the rectangle
 /// [x-dx, x+dx]x[y-dy, y+dy].
 /// The image is changed in-place.
+
+
+
+void ImageBlur(Image img, int dx, int dy) {
+  assert(img != NULL);
+  assert(dx >= 0);
+  assert(dy >= 0);
+
+  //this is the sum of pixel values for each pixel (x,y) of the rectangle from (0,0) to (x,y)
+  double *sums = malloc(GetSize(img) * sizeof(double));
+  assert(sums != NULL);
+  int index;
+   for (int i = 0; i < img->height; i++) {
+     for (int j = 0; j < img->width; j++) {
+       index = G(img, j, i);
+       sums[index] = ImageGetPixel(img, j, i);
+
+       // Add cumulative sum from the pixel above
+       if (i > 0) {
+         sums[index] += sums[index - img->width];
+       }
+
+      // Add cumulative sum from the pixel to the left
+      if (j > 0) {
+        sums[index] += sums[index - 1];
+      }
+
+      // Subtract cumulative sum from the pixel diagonally above and to the left
+       if (j > 0 && i > 0) {
+         sums[index] -= sums[index - 1 - img->width];
+       }
+     }
+  }
+
+  for (int row = 0; row < img->height; row++) {
+    for (int col = 0; col < img->width; col++) {
+      //calculate boundaries
+      int x_min = max(0, col - dx - 1);
+      int x_max = min(col + dx, img->width - 1);
+      int y_min = max(0, row - dy - 1);
+      int y_max = min(row + dy, img->height - 1);
+
+      //this is the number of pixels in the rectangle
+      int pixels = (x_max - x_min ) * (y_max - y_min);
+
+      //what happens is
+      //       0         m          n
+      //      0+--------+----------+
+      //       |   a    |    b     |
+      //      p+--------+----------+
+      //       |        |          |
+      //       |   c    |     d    |
+      //       |        |          |
+      //      q+--------+----------+
+
+      // a is the rectangle from (0,0) to (p,m)
+      // b is the rectangle from (0,0) to (p,n)
+      // c is the rectangle from (0,0) to (q,m)
+      // d is the rectangle from (0,0) to (q,n)
+      // the pixel (row,col) is in the middle of the rectangle from (p,m) to (q,n) (where the letter d is)
+      // the sum of all pixels surounding (row,col) is therefore d-c-b+a
+
+      int a = y_min< 0 || x_min< 1 ? 0 : sums[G(img,x_min,y_min)];
+      int b = y_min< 0 ? 0 : sums[G(img,x_max,y_min)];
+      int c = x_min< 0 ? 0 : sums[G(img,x_min,y_max)];
+      int d = sums[G(img,x_max,y_max)];
+
+      //value is
+      int val = d-c-b+a;
+      img->pixel[G(img, col, row)] =  (double)val/pixels+0.5;
+
+    }
+  }
+  free(sums);
+
+}
+
+// ##########################################################3
 void ImageBlurNotCorrected(Image img, int dx, int dy) {
    // Allocate memory for cumulative sum array
   uint8_t* cumsum = malloc(GetSize(img) * sizeof(uint8_t));
@@ -822,83 +900,6 @@ void ImageBlurNotCorrected(Image img, int dx, int dy) {
    free(cumsum);
 }
 
-
-
-void ImageBlur(Image img, int dx, int dy) {
-  assert(img != NULL);
-  assert(dx >= 0);
-  assert(dy >= 0);
-
-  //this is the sum of pixel values for each pixel (x,y) of the rectangle from (0,0) to (x,y)
-  double *sums = malloc(GetSize(img) * sizeof(double));
-  assert(sums != NULL);
-  int index;
-   for (int i = 0; i < img->height; i++) {
-     for (int j = 0; j < img->width; j++) {
-       index = G(img, j, i);
-       sums[index] = ImageGetPixel(img, j, i);
-
-       // Add cumulative sum from the pixel above
-       if (i > 0) {
-         sums[index] += sums[index - img->width];
-       }
-
-      // Add cumulative sum from the pixel to the left
-      if (j > 0) {
-        sums[index] += sums[index - 1];
-      }
-
-      // Subtract cumulative sum from the pixel diagonally above and to the left
-       if (j > 0 && i > 0) {
-         sums[index] -= sums[index - 1 - img->width];
-       }
-     }
-  }
-
-  for (int row = 0; row < img->height; row++) {
-    for (int col = 0; col < img->width; col++) {
-      //calculate boundaries
-      int x_min = max(0, col - dx - 1);
-      int x_max = min(col + dx, img->width - 1);
-      int y_min = max(0, row - dy - 1);
-      int y_max = min(row + dy, img->height - 1);
-
-      //this is the number of pixels in the rectangle
-      int pixels = (x_max - x_min ) * (y_max - y_min);
-
-      //what happens is
-      //       0         m          n
-      //      0+--------+----------+
-      //       |   a    |    b     |
-      //      p+--------+----------+
-      //       |        |          |
-      //       |   c    |     d    |
-      //       |        |          |
-      //      q+--------+----------+
-
-      // a is the rectangle from (0,0) to (p,m)
-      // b is the rectangle from (0,0) to (p,n)
-      // c is the rectangle from (0,0) to (q,m)
-      // d is the rectangle from (0,0) to (q,n)
-      // the pixel (row,col) is in the middle of the rectangle from (p,m) to (q,n) (where the letter d is)
-      // the sum of all pixels surounding (row,col) is therefore d-c-b+a
-
-      int a = y_min< 0 || x_min< 1 ? 0 : sums[G(img,x_min,y_min)];
-      int b = y_min< 0 ? 0 : sums[G(img,x_max,y_min)];
-      int c = x_min< 0 ? 0 : sums[G(img,x_min,y_max)];
-      int d = sums[G(img,x_max,y_max)];
-
-      //value is
-      int val = d-c-b+a;
-      img->pixel[G(img, col, row)] =  (double)val/pixels+0.5;
-
-    }
-  }
-  free(sums);
-
-}
-
-// ##########################################################3
 
 void ImageBlurOld1(Image img, int dx, int dy) { 
   assert(img != NULL);
