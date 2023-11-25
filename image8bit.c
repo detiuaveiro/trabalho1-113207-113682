@@ -732,7 +732,7 @@ void ImageBlur(Image img, int dx, int dy) {
   assert(dy >= 0);
 
   //this is the sum of pixel values for each pixel (x,y) of the rectangle from (0,0) to (x,y)
-  double *sums = malloc(GetSize(img) * sizeof(double));
+  double sums = malloc(GetSize(img) sizeof(double));
   assert(sums != NULL);
   int index;
    for (int i = 0; i < img->height; i++) {
@@ -745,17 +745,17 @@ void ImageBlur(Image img, int dx, int dy) {
          sums[index] += sums[index - img->width];
        }
 
-      // Add cumulative sum from the pixel to the left
-      if (j > 0) {
-        sums[index] += sums[index - 1];
-      }
-
-      // Subtract cumulative sum from the pixel diagonally above and to the left
-       if (j > 0 && i > 0) {
-         sums[index] -= sums[index - 1 - img->width];
+       // Add cumulative sum from the pixel to the left
+       if (j > 0) {
+         sums[index] += sums[index - 1];
        }
-     }
-  }
+
+       // Subtract cumulative sum from the pixel diagonally above and to the left
+      if (j > 0 && i > 0) {
+        sums[index] -= sums[index - 1 - img->width];
+      }
+    }
+   }
 
   for (int row = 0; row < img->height; row++) {
     for (int col = 0; col < img->width; col++) {
@@ -766,7 +766,7 @@ void ImageBlur(Image img, int dx, int dy) {
       int y_max = min(row + dy, img->height - 1);
 
       //this is the number of pixels in the rectangle
-      int pixels = (x_max - x_min ) * (y_max - y_min);
+      int pixels = (x_max - x_min) * (y_max - y_min);
 
       //what happens is
       //       0         m          n
@@ -777,7 +777,6 @@ void ImageBlur(Image img, int dx, int dy) {
       //       |   c    |     d    |
       //       |        |          |
       //      q+--------+----------+
-
       // a is the rectangle from (0,0) to (p,m)
       // b is the rectangle from (0,0) to (p,n)
       // c is the rectangle from (0,0) to (q,m)
@@ -785,14 +784,15 @@ void ImageBlur(Image img, int dx, int dy) {
       // the pixel (row,col) is in the middle of the rectangle from (p,m) to (q,n) (where the letter d is)
       // the sum of all pixels surounding (row,col) is therefore d-c-b+a
 
-      int a = y_min< 0 || x_min< 1 ? 0 : sums[G(img,x_min,y_min)];
+      int a = y_min< 0 || x_min< 0 ? 0 : sums[G(img,x_min,y_min)];
       int b = y_min< 0 ? 0 : sums[G(img,x_max,y_min)];
       int c = x_min< 0 ? 0 : sums[G(img,x_min,y_max)];
-      int d = sums[G(img,x_max,y_max)];
+      int d = sums[G(img,x_max, y_max)];
 
       //value is
       int val = d-c-b+a;
-      img->pixel[G(img, col, row)] =  (double)val/pixels+0.5;
+      img->pixel[G(img,col, row)]  = (double)val/pixels+0.5;
+
 
     }
   }
