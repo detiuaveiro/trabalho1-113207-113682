@@ -150,11 +150,15 @@ void ImageInit(void) {  ///
   InstrName[0] = "pixmem";  // InstrCount[0] will count pixel array acesses
   // Name other counters here...
   InstrName[1] = "comparações"; 
+  InstrName[2] = "somas";
+  InstrName[3] = "divisões";  
 }
 
 // Macros to simplify accessing instrumentation counters:
 #define PIXMEM InstrCount[0]
 #define comps InstrCount[1]
+#define somas InstrCount[2]
+#define divs InstrCount[3]
 // Add more macros here...
 
 // TIP: Search for PIXMEM or InstrCount to see where it is incremented!
@@ -675,8 +679,8 @@ int ImageMatchSubImage(Image img1, int x, int y, Image img2) {  ///
   // Insert your code here!
   for (int i = 0; i < img2->height; i++) {
     for (int j = 0; j < img2->width; j++) {
-      if (ImageGetPixel(img1, x + j, y + i) != ImageGetPixel(img2, j, i)) {
-        comps+=1;
+      comps+=1;
+      if (ImageGetPixel(img1, x + j, y + i) != ImageGetPixel(img2, j, i)) {     
         return 0;
       }
     }
@@ -695,8 +699,8 @@ int ImageLocateSubImage(Image img1, int* px, int* py, Image img2) {  ///
   for (int i = 0; i < img1->height - img2->height+1; i++) {
     for (int j = 0; j < img1->width - img2->width+1; j++) {
       if (ImageMatchSubImage(img1, j, i, img2)) {
-        *px = i;
-        *py = j;
+        *px = j;
+        *py = i;
         return 1;
       }
     }
@@ -710,19 +714,68 @@ int ImageLocateSubImage(Image img1, int* px, int* py, Image img2) {  ///
 /// Each pixel is substituted by the mean of the pixels in the rectangle
 /// [x-dx, x+dx]x[y-dy, y+dy].
 /// The image is changed in-place.
-void ImageBlur(Image img, int dx, int dy) {
-  assert(img != NULL);
-  assert(dx >= 0);
-  assert(dy >= 0);
+void ImageBlurWrong(Image img, int dx, int dy) { 
+  uint8_t* cumsum = malloc(GetSize(img) * sizeof(uint8_t));
+  int index;
+  uint8_t C1,C2,C3,C4;
+  int lex,ldx,lsy,liy;
+  int ha=2*dy+1;
+  int ca=2*dx+1;
+  for (int i = 0; i < img->height; i++) {
+    for (int j = 0; j < img->width; j++) {
+      index=G(img,j,i);
+      cumsum[index]=ImageGetPixel(img,j,i);
+      if(i>0){
+        cumsum[index]+=cumsum[(index-img->width)];
+      }
+      if(j>0){
+        cumsum[index]+=cumsum[(index-1)];
+      }
+      if(j>0 && i>0){
+        cumsum[index]-=cumsum[(index-1-img->width)];
+      }
 
-  Image img2 = ImageCreate(img->width, img->height, img->maxval);
+    }
+  }
+  int blurA = ha * ca;
+  for (int i = 0; i < img->height; i++) {
+    lsy=i-dy-1; liy=i+dy;
+    ha=(2 * dy + 1);
+    if(lsy<0){
+      C2=0;
+      C1=0;   
+      ha=ha+lsy;
+    } 
+    if(liy>=img->height){liy=img->height-1;ha=ha-(dy-(img->height-i-1));}
+      for (int j = 0; j < img->width; j++) {      
+        lex=j-dx-1; ldx= j+dx;
+        if(ldx>=img->width){ldx=img->width-1; ca=ca-(dx-(img->width-j-1)); }
+        C4=cumsum[G(img,ldx,liy)];
+        if(lex<0){
+          C1=0;
+          C3=0;
+          ca=ca+lex;
+          if(lsy>=0) {
+            C2=cumsum[G(img,ldx,lsy)];
+          }
+        }
+        else {
+          if(lsy>=0){
+            C1=cumsum[G(img,lex,lsy)];
+            C2=cumsum[G(img,ldx,lsy)];
+            C3=cumsum[G(img,lex,liy)];
+          }
+          else{
+            C3=cumsum[G(img,lex,liy)];
+          }
+        } 
+        blurA=ca*ha;
+        ImageSetPixel(img,j,i,(C4-C3-C2+C1)/blurA);
+        ca=(2 * dx + 1);  
+    }
  
-  // percorre os piexeis do retangulo
-  // e guarda os seus valores
-  // substituis os pixeis da imagem pelos correspondentes da mesma poiscao do retangulo
-
-  
-
+  }
+  free(cumsum);
 }
 
 
@@ -734,7 +787,8 @@ void ImageBlur(Image img, int dx, int dy) {
 
 
 
-void ImageBlurSubOptimal(Image img, int dx, int dy) { 
+
+void ImageBlur(Image img, int dx, int dy) { 
   assert(img != NULL);
   assert(dx >= 0);
   assert(dy >= 0);
@@ -755,7 +809,6 @@ void ImageBlurSubOptimal(Image img, int dx, int dy) {
     int sum = 0;
     // count para pixeis validos
     int count = 0;
-
     // loop no retangulo
     for (int i = -dx; i <= dx; i++) {
       for (int j = -dy; j <= dy; j++) {
@@ -765,12 +818,14 @@ void ImageBlurSubOptimal(Image img, int dx, int dy) {
           sum += ImageGetPixel(img, x + i, y + j);
           //incrementar o count
           count++;
+          somas++;
         }
       }
     }
     // calcular a media e arredondar
     // dar cast a double
     blurred_pixels[pixel] = (double)sum / count;
+    divs++;
 
   }
 
@@ -841,10 +896,12 @@ void ImageBlurOld2(Image img, int dx, int dy) {  ///
             if (ImageValidPos(img, j + k, i + l)) {
               sum+= ImageGetPixel(img2, j + k, i + l);
               count++;
+              somas++;
             }
           }
         }
         ImageSetPixel(img, j, i, (((double)sum / count) + 0.5));
+        divs++;
         count = 0;
         sum = 0;
       }
