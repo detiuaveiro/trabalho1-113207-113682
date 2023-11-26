@@ -729,7 +729,7 @@ void ImageBlur(Image img, int dx, int dy) {
   assert(dx >= 0);
   assert(dy >= 0);
 
-  //this is the sum of pixel values for each pixel (x,y) of the rectangle from (0,0) to (x,y)
+  // isto é a soma dos valores dos pixeis do retangulo desde (0,0) para (x,y)
   double *sums = malloc(GetSize(img) * sizeof(double));
   assert(sums != NULL);
   int index;
@@ -738,17 +738,17 @@ void ImageBlur(Image img, int dx, int dy) {
        index = G(img, j, i);
        sums[index] = ImageGetPixel(img, j, i);
 
-       // Add cumulative sum from the pixel above
+       // soma cumulativa dos pixeis acima
        if (i > 0) {
          sums[index] += sums[index - img->width];
        }
 
-       // Add cumulative sum from the pixel to the left
+       // adicionar soma aos pixeis da esquerda
        if (j > 0) {
          sums[index] += sums[index - 1];
        }
 
-       // Subtract cumulative sum from the pixel diagonally above and to the left
+       // subtrair a soma cumulativa do pixel diagonal à esquerda
       if (j > 0 && i > 0) {
         sums[index] -= sums[index - 1 - img->width];
       }
@@ -757,37 +757,21 @@ void ImageBlur(Image img, int dx, int dy) {
 
   for (int row = 0; row < img->height; row++) {
     for (int col = 0; col < img->width; col++) {
-      //calculate boundaries
+      // calcular as bordas
       int x_min = max(0, col - dx - 1);
       int x_max = min(col + dx, img->width - 1);
       int y_min = max(0, row - dy - 1);
       int y_max = min(row + dy, img->height - 1);
 
-      //this is the number of pixels in the rectangle
+      // numero de pixeis no retangulo
       int pixels = (x_max - x_min) * (y_max - y_min);
 
-      //what happens is
-      //       0         m          n
-      //      0+--------+----------+
-      //       |   a    |    b     |
-      //      p+--------+----------+
-      //       |        |          |
-      //       |   c    |     d    |
-      //       |        |          |
-      //      q+--------+----------+
-      // a is the rectangle from (0,0) to (p,m)
-      // b is the rectangle from (0,0) to (p,n)
-      // c is the rectangle from (0,0) to (q,m)
-      // d is the rectangle from (0,0) to (q,n)
-      // the pixel (row,col) is in the middle of the rectangle from (p,m) to (q,n) (where the letter d is)
-      // the sum of all pixels surounding (row,col) is therefore d-c-b+a
 
       int a = y_min< 0 || x_min< 0 ? 0 : sums[G(img,x_min,y_min)];
       int b = y_min< 0 ? 0 : sums[G(img,x_max,y_min)];
       int c = x_min< 0 ? 0 : sums[G(img,x_min,y_max)];
       int d = sums[G(img,x_max, y_max)];
 
-      //value is
       int val = d-c-b+a;
       img->pixel[G(img,col, row)]  = (double)val/pixels+0.5;
 
@@ -798,50 +782,51 @@ void ImageBlur(Image img, int dx, int dy) {
 
 }
 
-// ##########################################################3
+// ##########################################################
+// Parecida à função de cima, mas a de cima foi refeita até com nomes mais compreensiveis
 void ImageBlurNotCorrected(Image img, int dx, int dy) {
-   // Allocate memory for cumulative sum array
+   // Alocar memoria para o array de somas cumulativas
   uint8_t* cumsum = malloc(GetSize(img) * sizeof(uint8_t));
 
-   // Variables for pixel indices and cumulative sums
+   // Variáveis para os indices do pixel e soma cumulativa
   int index;
    uint8_t C1 = 0, C2 = 0, C3, C4;
 
-   // Variables for loop boundaries and indices
+   // Variáveis para o loop das bordas e indices
    int lex, ldx, lsy, liy;
 
-   // Variables for blur dimensions
+   // Dimensao do blur
    int ha, ca;
 
-   // Calculate cumulative sum for each pixel
+   // Calcular a soma cumulativa de cada pixel
    for (int i = 0; i < img->height; i++) {
      for (int j = 0; j < img->width; j++) {
        index = G(img, j, i);
        cumsum[index] = ImageGetPixel(img, j, i);
 
-       // Add cumulative sum from the pixel above
+       // De resto calcula-se igual à função acima
        if (i > 0) {
          cumsum[index] += cumsum[index - img->width];
        }
 
-      // Add cumulative sum from the pixel to the left
+      
       if (j > 0) {
         cumsum[index] += cumsum[index - 1];
       }
 
-      // Subtract cumulative sum from the pixel diagonally above and to the left
+  
        if (j > 0 && i > 0) {
          cumsum[index] -= cumsum[index - 1 - img->width];
        }
      }
   }
 
-   // Apply blur to each pixel
+   // Aplicar o blur aos píxeis
    for (int i = 0; i < img->height; i++) {
      lsy = i - dy - 1;
      liy = i + dy;
      ha = 2 * dy + 1;
-     // Handle boundary conditions for the top of the image
+    
      if (lsy < 0) {
        C2 = 0;
        C1 = 0;
@@ -857,26 +842,26 @@ void ImageBlurNotCorrected(Image img, int dx, int dy) {
      for (int j = 0; j < img->width; j++) {
        lex = j - dx - 1;
        ldx = j + dx;
-
-       // Handle boundary conditions for the right of the image
+      // Condição de bordas
+     
        if (ldx >= img->width) {
         ldx = img->width - 1;
        }
 
-       // Calculate C4, the cumulative sum of pixel values in the blur area
+    
        C4 = cumsum[G(img, ldx, liy)];
 
-       // Handle boundary conditions for the left of the image
+     
        if (lex < 0) {
          C1 = 0;
          C3 = 0;
 
-         // Calculate C2 if lsy is greater than or equal to 0
+        
          if (lsy >= 0) {
            C2 = cumsum[G(img, ldx, lsy)];
          }
        } else {
-         // Calculate C1, C2, and C3 based on cumulative sums
+        
          if (lsy >= 0) {
            C1 = cumsum[G(img, lex, lsy)];
            C2 = cumsum[G(img, ldx, lsy)];
@@ -886,15 +871,15 @@ void ImageBlurNotCorrected(Image img, int dx, int dy) {
          }
        }
 
-      // Calculate blur area for each pixel
+
        ca = 2 * dx + 1;
 
-       // Calculate the final pixel value after applying blur
+       
        ImageSetPixel(img, j, i, (C4 - C3 - C2 + C1) / (ha * ca));
      }
    }
 
-   // Free allocated memory
+  
    free(cumsum);
 }
 
