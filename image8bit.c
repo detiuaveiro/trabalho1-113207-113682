@@ -137,7 +137,7 @@ static int check(int condition, const char* failmsg) {
   errCause = (char*)(condition ? "" : failmsg);
   return condition;
 }
-
+// Funções auxiliares criadas:
 //Calcular o tamanho de uma imagem
 static int GetSize(Image img){
   return img->height*img->width;
@@ -188,7 +188,7 @@ Image ImageCreate(int width, int height, uint8 maxval) {  ///
   assert(0 < maxval && maxval <= PixMax);
   // Insert your code here!
 
-  // Allocate memory for the pixel data *
+  // Alocar memória para o array pixel
   uint8_t* pixel = malloc(width * height * sizeof(uint8_t));
   if (pixel == NULL) {
     errCause = "Falhou a alocação de memória para o pixel";
@@ -200,14 +200,13 @@ Image ImageCreate(int width, int height, uint8 maxval) {  ///
 
   if (img == NULL) {
     errCause = "Falhou a alocação de memória para a struct Image";
-    // Usei errCause para não ter que criar uma variável nova
     free(pixel);
-    // Preciso de dar free ao pixel porque não foi atribuido ao img
-    // Não dar memleak
+    // Dar free ao pixel porque não foi atribuido ao img
+    // no caso de erro
     return NULL;
   }
 
-  // Set the Image properties *
+  // Definir as propriedades da imagem
   img->width = width;
   img->height = height;
   img->maxval = maxval;
@@ -224,11 +223,11 @@ Image ImageCreate(int width, int height, uint8 maxval) {  ///
 void ImageDestroy(Image* imgp) {  ///
   assert(imgp != NULL);
   // Insert your code here!
+  // Libertar memória do array e da imagem
   free((*imgp)->pixel);
   free(*imgp);
+  // Dar set ao valor do pointer como NULL
   *imgp = NULL;
-  // Mesmo dando free ao imgp, o valor do imgp não é NULL
-  // Então dou set ao valor do pointer como NULL
 }
 
 /// PGM file operations
@@ -343,10 +342,8 @@ int ImageMaxval(Image img) {  ///
 void ImageStats(Image img, uint8* min, uint8* max) {  ///
   assert(img != NULL);
   // Insert your code here!
-
-  //*min = 0;
-  //*max = 255;
-
+  // Iterar pela imagem e mudar o valor do minimo e 
+  // maximo caso encontremos valores menores ou maiores, respetivamente
   for (int i = 0; i < img->width * img->height; i++) {
     if (img->pixel[i] < *min) {
       *min = img->pixel[i];
@@ -367,14 +364,9 @@ int ImageValidPos(Image img, int x, int y) {  ///
 int ImageValidRect(Image img, int x, int y, int w, int h) {  ///
   assert(img != NULL);
   // Insert your code here!
-  // return (0 <= w && w < img->width + x) && (0 <= h && h < img->height + y)
+  //Verificar se os cantos do retângulo pertencem à imagem
   return ImageValidPos(img, x, y) && ImageValidPos(img, x + w, y + h);
-  // Assim vemos se o retangulo está dentro da imagem
-  // Porque se o x e y forem maiores que a largura e altura da imagem
-  // Então o retangulo não está dentro da imagem
-  // Isto deve estar mal, tenho que ver melhor, perceber o x,y,w,h que penso que
-  // seja o x,y do retangulo e o w,h a largura e altura do retangulo
-  // Tá certo, e bué bem resumido dw
+  
 }
 
 /// Pixel get & set operations
@@ -390,29 +382,12 @@ int ImageValidRect(Image img, int x, int y, int w, int h) {  ///
 static inline int G(Image img, int x, int y) {
   int index;
   // Insert your code here!
-  // index = y * (img->width-1) + x;
-  // Isto estava mal porque se tivesse um numero numa matriz 3x3 na coordenada
-  // (1,1) ele iria estar na posicao index 3
-  /*
-  0 1 2
-  3 4 5
-  6 7 8
-  */
-  // Posição (1,1) -> pode corresponder a 1 ou a 5, mas a posição 3 daria print
-  // ao array, 4 ou 3, dependendo se conta index 0 ou 1 Se as imagens forem
-  // retangulares sempre, posso fazer img->width * img->height Ou secalhar não
-  // porque ia ser sempre o mesmo valor que é o da struct image
-
-  // tendo um array com i linhas j colunas
-  // Posição (1,1) -> corresponde ao meio numa matriz 3x3
-  // Neste caso o numero ficaria no indice 4
-  // Posição 0,0 corresponderia ao indice 0
-  // i corresponde à linha onde estas e j corresponde à coluna onde estas
-  // 0,0 é o canto superior esquerdo
+  // Posição (1,1) -> corresponde ao meio numa matriz 3x3 -> indíce 4 do array
+  // Posição (0,0) corresponderia ao indice 0
+  // O indice da posição de cada pixel é igual à linha em que se encontra 
+  // vezes o comprimento da imagem  mais a coluna onde se encontra
   index = y * (img->width) + x;
-
   assert(0 <= index && index < img->width * img->height);
-  // Esta função vai transformar uma matriz nalgo linear
   // Se a matriz for 10x10 então o último pixel está no index 99
   return index;
 }
@@ -431,7 +406,6 @@ void ImageSetPixel(Image img, int x, int y, uint8 level) {  ///
   assert(ImageValidPos(img, x, y));
   PIXMEM += 1;  // count one pixel access (store)
   img->pixel[G(img, x, y)] = level;
-  // O pixel em x,y vai ser level
 }
 
 /// Pixel transformations
@@ -451,11 +425,6 @@ void ImageNegative(Image img) {  ///
   for (int i = 0; i < size; i++) {
     img->pixel[i] = img->maxval - img->pixel[i];
   }
-  // Testar se dá todos os valores certos
-  // Estou em dúvida se converteria realmente para o oposto se já for um light
-  // pixel
-  // Sim, em princípio está certo, o mais branco, pixel=maxval, vira o mais escuro
-  // pixel=0 
 }
 
 /// Apply threshold to image.
@@ -689,6 +658,9 @@ int ImageMatchSubImage(Image img1, int x, int y, Image img2) {  ///
   for (int i = 0; i < img2->height; i++) {
     for (int j = 0; j < img2->width; j++) {
       comps+=1;
+      // verificamos se os pixeis a partir de (x,y) da imagem1 
+      // correspondem à imagem2, parando a execução no caso 
+      // de se encontrar uma diferença
       if (ImageGetPixel(img1, x + j, y + i) != ImageGetPixel(img2, j, i)) {     
         return 0;
       }
@@ -705,6 +677,8 @@ int ImageLocateSubImage(Image img1, int* px, int* py, Image img2) {  ///
   assert(img1 != NULL);
   assert(img2 != NULL);
   // Insert your code here!
+  // Iteramos cada pixel da imagem1 e, para cada um,
+  // verificamos se a imagem2 se pode encontrar a começar nesse pixel
   for (int i = 0; i < img1->height - img2->height+1; i++) {
     for (int j = 0; j < img1->width - img2->width+1; j++) {
       if (ImageMatchSubImage(img1, j, i, img2)) {
@@ -729,10 +703,11 @@ void ImageBlur(Image img, int dx, int dy) {
   assert(dx >= 0);
   assert(dy >= 0);
 
-  // isto é a soma dos valores dos pixeis do retangulo desde (0,0) para (x,y)
-  double *sums = malloc(GetSize(img) * sizeof(double));
+ // Criação do array que vai guardar os valores das somas cumulativas
+  double *sums = malloc(GetSize(img) * sizeof(double)); 
   assert(sums != NULL);
   int index;
+  // cálculo das somas cumulativas
    for (int i = 0; i < img->height; i++) {
      for (int j = 0; j < img->width; j++) {
        index = G(img, j, i);
@@ -743,7 +718,7 @@ void ImageBlur(Image img, int dx, int dy) {
          sums[index] += sums[index - img->width];
        }
 
-       // adicionar soma aos pixeis da esquerda
+       // adicionar à soma os pixeis da esquerda
        if (j > 0) {
          sums[index] += sums[index - 1];
        }
@@ -754,16 +729,16 @@ void ImageBlur(Image img, int dx, int dy) {
       }
     }
    }
-
+  // aplicação do filtro blur 
   for (int row = 0; row < img->height; row++) {
     for (int col = 0; col < img->width; col++) {
-      // calcular as bordas
+      // calcular as bordas da janela
       int x_min = max(0, col - dx - 1);
       int x_max = min(col + dx, img->width - 1);
       int y_min = max(0, row - dy - 1);
       int y_max = min(row + dy, img->height - 1);
 
-      // numero de pixeis no retangulo
+      // numero de pixeis na janela
       int pixels = (x_max - x_min) * (y_max - y_min);
 
 
@@ -771,18 +746,20 @@ void ImageBlur(Image img, int dx, int dy) {
       int b = y_min< 0 ? 0 : sums[G(img,x_max,y_min)];
       int c = x_min< 0 ? 0 : sums[G(img,x_min,y_max)];
       int d = sums[G(img,x_max, y_max)];
-
+      // cálculo da médias dos pixéis da janela e associação
       int val = d-c-b+a;
       img->pixel[G(img,col, row)]  = (double)val/pixels+0.5;
 
 
     }
   }
+  // libertar a memória
   free(sums);
 
 }
 
-// ##########################################################
+// #################################################################
+// ########### Versões menos eficientes da blur ####################
 // Parecida à função de cima, mas a de cima foi refeita até com nomes mais compreensiveis
 void ImageBlurNotCorrected(Image img, int dx, int dy) {
    // Alocar memoria para o array de somas cumulativas
@@ -909,7 +886,7 @@ void ImageBlurOld1(Image img, int dx, int dy) {
     // loop no retangulo
     for (int i = -dx; i <= dx; i++) {
       for (int j = -dy; j <= dy; j++) {
-        //primeiro vamos ter que verificar se a pioscao e valida
+        //primeiro vamos ter que verificar se a posicão é valida
         if (ImageValidPos(img, x + i, y + j)) {
           // adcioanr o pixel a soma
           sum += ImageGetPixel(img, x + i, y + j);
@@ -922,7 +899,6 @@ void ImageBlurOld1(Image img, int dx, int dy) {
     // calcular a media e arredondar
     // dar cast a double
     blurred_pixels[pixel] = (double)sum / count;
-    //print count if row and col are 0
     divs++;
 
   }
@@ -944,8 +920,7 @@ void ImageBlurOld3(Image img, int dx, int dy) {  ///
   // Insert your code here!
   // Criar uma imagem nova para os pixeis que já foram blurred não influenciarem os píxeis que vão ser blurred...
     Image img2 = ImageCreate(img->width, img->height, img->maxval);
-    // A alocação vai falhar?
-    // Provavelmente não, só se ficar sem memória.
+
     for (int g = 0; g < img->width * img->height; g++) {
       img2->pixel[g] = img->pixel[g];
     }
@@ -972,9 +947,6 @@ void ImageBlurOld3(Image img, int dx, int dy) {  ///
       }
     }
       free(pixels);
-      //Conseguimos criar uma versão mais eficiente que não dependa 
-      // do tamanho da janela de blur, o stor explicou, vou tentar 
-      //implementar depois de guardar esta para o relatorio
 }
 
 void ImageBlurOld2(Image img, int dx, int dy) {  ///
@@ -1006,9 +978,7 @@ void ImageBlurOld2(Image img, int dx, int dy) {  ///
         sum = 0;
       }
     }
-      //Conseguimos criar uma versão mais eficiente que não dependa 
-      // do tamanho da janela de blur, o stor explicou, vou tentar 
-      //implementar depois de guardar esta para o relatorio
+  
 }
 
 
