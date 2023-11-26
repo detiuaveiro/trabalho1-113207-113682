@@ -422,6 +422,9 @@ void ImageNegative(Image img) {  ///
   assert(img != NULL);
   // Insert your code here!
   int size = GetSize(img);
+  //Para cada pixel, fazemos com que o seu valor
+  // se torne o inverso, subtraíndo o valor máximo(branco)
+  // pelo atual e aplicando a diferença ao pixel
   for (int i = 0; i < size; i++) {
     img->pixel[i] = img->maxval - img->pixel[i];
   }
@@ -451,13 +454,13 @@ void ImageBrighten(Image img, double factor) {  ///
   assert(img != NULL);
   assert(factor >= 0.0);
   // Insert your code here!
-  // Podemos otimizar o uso da variável size? -> Verificar se podemos usar uma
-  // função
-  // Podemos, já coloquei
   int size = GetSize(img);
   for (int i = 0; i < size; i++) {
     img->pixel[i] = img->pixel[i] * factor + 0.5;
-    // Porque não dava para dar round então + 0.5
+    // Adicionamos +0.5 para contornar erros 
+    // de arredondamento
+    // Caso o valor do pixel supere o maxval,
+    // igualamo-lo ao mesmo
     if (img->pixel[i] > img->maxval) {
       img->pixel[i] = img->maxval;
     }
@@ -490,37 +493,17 @@ Image ImageRotate(Image img) {
   // Insert code here!
   Image new_img = ImageCreate(img->height, img->width, img->maxval);
   assert(new_img != NULL);
-  // As imagens vão ser apenas 4 por 4?
-  // Anti clockwise??? -> Resultado
 
-  // Usar a função ImageSetPixel e o get i guess
-  // img->width == *img.width
-
-  // Exemplo da rotação
-
-  // Esta tem dois for's , vou percorrer como se fosse uma matriz
-  // Comparar a complexidade desta, com a anteriormente desenvolvida ->
-  // Guilherme
   for (int i = 0; i < img->width; i++) {
     for (int j = 0; j < img->height; j++) {
-      // A função ImageSetPixel já vai buscar o pixel da imagem e guarda o pixel
-      // anterior Função G mete os pixeis de forma linear Trocar a ordem das
-      // coordenadas x e y e reverter
+      //Revertemos as coordenadas x e y
       int x = img->height - 1 - j;
       int y = i;
       // Pixel da nova imagem
       ImageSetPixel(new_img, i, j, ImageGetPixel(img, x, y));
     }
   }
-  // Para o Guilherme
-  // img é uma imagem
-  // print(img) - > 1 2 3 4
-  // imagerotate(*img)
-  // ou entao img = imagerotate(img)
-  // print(img) -> 4 3 2 1
-  // mas se for
-  // imagerotate(img)
-  // print(img) -> 1 2 3 4
+
   return new_img;
 }
 
@@ -535,31 +518,14 @@ Image ImageMirror(Image img) {
   assert(img != NULL);
   // Insert your code here
   Image new_img = ImageCreate(img->width, img->height, img->maxval);
-  assert(new_img != NULL);
-
-  // Fazer um for dentro dum for?
+  assert(new_img != NULL); 
 
   for (int i = 0; i < img->width * img->height; i++) {
     // Obter o x da imagem original
     int x = i % img->width;
-    // Caso não percebas isto gui, é porque imaginei a imagem como uma matriz
-    // Mas como é uma matriz linear, então o y é o resto da divisão do i pela
-    // largura da imagem No sentido em que tens o indice 3 que corresponde a
-    // coordenada 1,0 na matriz e sendo matriz 3x3 3%3 = 0 Obter o y da imagem
-
-    // Exemplo
-    // 0 1 2
-    // 3 4 5
-    // 6 7 8
-    // 6 -> 6%3 = 0
-    // 6 -> 6/3 = 2
-    // 6 -> 2,0
-    // x -> colunas
-    // y -> linhas
-
+    // Obter o y da imagem original
     int y = i / img->height;
-    int new_x = img->width - 1 -
-                x;  // O x da nova imagem é o x da imagem original invertido
+    int new_x = img->width - 1 -x;  // O x da nova imagem é o x da imagem original invertido
     ImageSetPixel(new_img, new_x, y, ImageGetPixel(img, x, y));
   }
 
@@ -586,13 +552,13 @@ Image ImageCrop(Image img, int x, int y, int w, int h) {  ///
   assert(new_img != NULL);
 
   for (int i = 0; i < w * h; i++) {
-    int new_x = i % w;  // Como na função acima vamos buscar o x da imagem
-                        // original daquela posição
+    // Obter o x do retângulo
+    int new_x = i % w;  
+    // Obter o y do retângulo
     int new_y = i / w;
-    // Eu estou a criar os pixeis, mas depois preciso de dar set a eles
-    ImageSetPixel(new_img, new_x, new_y,
-                  ImageGetPixel(img, x + new_x, y + new_y));
-    // Somar x e y onde começa o retangulo
+    // Dar set ao valor de cada pixel da imagem nova, obtendo cada pixel dentro 
+    // do retângulo
+    ImageSetPixel(new_img, new_x, new_y, ImageGetPixel(img, x + new_x, y + new_y));
   }
 
   return new_img;
@@ -607,19 +573,15 @@ Image ImageCrop(Image img, int x, int y, int w, int h) {  ///
 void ImagePaste(Image img1, int x, int y, Image img2) {  ///
   assert(img1 != NULL);
   assert(img2 != NULL);
+  //Verificar se a img2 cabe na img1 na posição x,y
   assert(ImageValidRect(img1, x, y, img2->width, img2->height));
   // Insert your code here!
-  // Aqui não é preciso criar uma imagem nova
   for (int i = 0; i < img2->width * img2->height; i++) {
     int new_x = i % img2->width;
     int new_y = i / img2->width;
-    ImageSetPixel(img1, x + new_x, y + new_y,
-                  ImageGetPixel(img2, new_x, new_y));
-    // Do mesmo método que em ImageCrop
-    // Só que depois damos set ao pixel da imagem 1
-    // Com os novos pixeis da imagem2
-    // Fazemos o x + new_x e y + new_y para sabermos onde começar a colar a
-    // imagem
+    // Colar os pixéis da img2 na img1, começando em x,y
+    ImageSetPixel(img1, x + new_x, y + new_y, ImageGetPixel(img2, new_x, new_y));
+
   }
 }
 
@@ -636,10 +598,13 @@ void ImageBlend(Image img1, int x, int y, Image img2, double alpha) {
   // Insert your code here!
   for (int j = 0; j < img2->width; j++) {
     for (int i = 0; i < img2->height; i++) {
+      // Cálculo do level do pixel, somamos +0.5 por causa de arredondamentos.
       int saturation = (ImageGetPixel(img1, x + j, y + i) * (1-alpha) + ImageGetPixel(img2, j, i) * (alpha)) + 0.5;
+      // Verificar se existe overflow
       if (saturation > img1->maxval) {
         saturation = img1->maxval;
       }
+      // Verificar se existe underflow
       else if (saturation < 0) {
         saturation = 0;
       }
@@ -741,12 +706,16 @@ void ImageBlur(Image img, int dx, int dy) {
       // numero de pixeis na janela
       int pixels = (x_max - x_min) * (y_max - y_min);
 
-
+      //Verificar se algum canto da janela se encontra fora da imagem
       int a = y_min< 0 || x_min< 0 ? 0 : sums[G(img,x_min,y_min)];
       int b = y_min< 0 ? 0 : sums[G(img,x_max,y_min)];
       int c = x_min< 0 ? 0 : sums[G(img,x_min,y_max)];
       int d = sums[G(img,x_max, y_max)];
       // cálculo da médias dos pixéis da janela e associação
+      // somando a soma cumulativa do canto inferior direito
+      // à do canto superior esquerdo e subtraindo os outros dois
+      // No fim dividimos pela área e somamos 0.5 para evitar
+      // erros de arredondamento
       int val = d-c-b+a;
       img->pixel[G(img,col, row)]  = (double)val/pixels+0.5;
 
